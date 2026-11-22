@@ -1,3 +1,5 @@
+<img align="right" src="docs/product-mark.svg" width="88" height="88" alt="A replacement strip fits into a ranked list.">
+
 # RankPatch
 
 **Keep search results ranked as workers revise them.**
