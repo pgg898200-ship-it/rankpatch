@@ -42,6 +42,8 @@ On 16 recorded SciFact queries, withdrawing the dense retriever changed the top-
 
 ### Replay a stream of updates
 
+[Can a late response bring back a withdrawn paper?](examples/revising_hybrid_search.ipynb) Replay six messages in all 720 delivery orders. The notebook checks the top three against a plain-Python rebuild after every delivery and shows what goes wrong when a coordinator accepts an older revision.
+
 From a checkout with RankPatch installed, this command plays seven example messages through the Python API. Each input line contains a source ID, a revision number and the complete ranked list. The last line replays an older revision. Its `applied` flag is false and the three winners keep their scores.
 
 ```sh
