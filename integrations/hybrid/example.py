@@ -4,7 +4,7 @@ import sqlite3
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neighbors import NearestNeighbors
 
-from catalog import CatalogFusion
+from rankpatch.catalog import CatalogFusion
 
 
 DOCUMENTS = {

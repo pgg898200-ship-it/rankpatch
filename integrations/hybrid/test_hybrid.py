@@ -1,6 +1,6 @@
 import unittest
 
-from catalog import CatalogFusion
+from rankpatch.catalog import CatalogFusion
 from example import DOCUMENTS, connect_fts, run
 
 
@@ -26,21 +26,6 @@ class HybridTests(unittest.TestCase):
             self.assertEqual(fusion.top(), [])
         finally:
             db.close()
-
-    def test_mapping_failure_preserves_revision(self):
-        fusion = CatalogFusion(sources=("a", "b"), documents=DOCUMENTS,
-                               rank_points=[5, 3], k=3)
-        fusion.replace("a", 1, ["spec/cache"])
-        for bad in (["spec/ledger", "unknown"], ["spec/decode", "spec/decode"]):
-            with self.assertRaises((KeyError, ValueError)):
-                fusion.replace("a", 2, bad)
-        with self.assertRaises(IndexError):
-            fusion.replace_neighbors("a", 2, [-1], fit_ids=["spec/ledger"])
-        self.assertEqual([h.id for h in fusion.top()], ["spec/cache"])
-        fusion.replace("a", 2, ["spec/shard"])
-        fusion.replace("b", 0, ["spec/decode"])
-        self.assertEqual([h.id for h in fusion.top()], ["spec/decode", "spec/shard"])
-
 
 if __name__ == "__main__":
     unittest.main()

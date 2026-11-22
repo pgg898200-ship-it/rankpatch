@@ -2,6 +2,7 @@
 import unittest
 
 from rankpatch import Index
+from rankpatch.catalog import CatalogFusion
 
 
 class BindingContract:
@@ -51,6 +52,23 @@ class BufferedTests(BindingContract, unittest.TestCase):
 
 class SteadyTests(BindingContract, unittest.TestCase):
     strategy = "steady"
+
+
+class CatalogTests(unittest.TestCase):
+    def test_mapping_failure_preserves_revision(self):
+        documents = {key: object() for key in ("spec/cache", "spec/decode", "spec/ledger", "spec/shard")}
+        fusion = CatalogFusion(sources=("a", "b"), documents=documents,
+                               rank_points=[5, 3], k=3)
+        fusion.replace("a", 1, ["spec/cache"])
+        for bad in (["spec/ledger", "unknown"], ["spec/decode", "spec/decode"]):
+            with self.assertRaises((KeyError, ValueError)):
+                fusion.replace("a", 2, bad)
+        with self.assertRaises(IndexError):
+            fusion.replace_neighbors("a", 2, [-1], fit_ids=["spec/ledger"])
+        self.assertEqual([h.id for h in fusion.top()], ["spec/cache"])
+        fusion.replace("a", 2, ["spec/shard"])
+        fusion.replace("b", 0, ["spec/decode"])
+        self.assertEqual([h.id for h in fusion.top()], ["spec/decode", "spec/shard"])
 
 
 class StrategyTests(unittest.TestCase):
