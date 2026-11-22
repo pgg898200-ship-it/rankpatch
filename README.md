@@ -4,7 +4,7 @@
 
 RankPatch is an in-process C++17 and Python library for incremental top-k rank fusion. Put one index in the coordinator for each live query. Keyword, vector and reranking workers send it ordered document IDs. After each update, your search UI or RAG context builder can read the current winners and their scores.
 
-[Try a revision in the browser](https://huggingface.co/spaces/pgg-engineering/rankpatch) · [Install RankPatch](#try-it) · [Connect a retriever](integrations/hybrid/README.md)
+[Try a revision in the browser](https://huggingface.co/spaces/pgg-engineering/rankpatch) · [Install RankPatch](#try-it) · [Connect a retriever](integrations/hybrid/README.md) · [Replay a retriever outage in Colab](https://colab.research.google.com/github/pgg898200-ship-it/rankpatch/blob/main/examples/retriever_outage.ipynb)
 
 ![A keyword worker promotes document 8. With five points for first place and three for second, its combined score rises from three to eight and it becomes the top result.](docs/revision.svg)
 
@@ -33,6 +33,12 @@ assert not index.replace(0, 0, [7, 19])  # late delivery
 index.replace(1, 5, [])          # withdraw worker 1
 assert index.top() == [(8, 5), (7, 3)]
 ```
+
+### Which papers disappear if a retriever goes offline?
+
+On 16 recorded SciFact queries, withdrawing the dense retriever changed the top-three set in 11 cases. Withdrawing BM25 changed it in 10. The notebook replays the first eight results from each worker and checks the incremental ranking against a full score rebuild after every message. Change the query, depth or context size and rerun it.
+
+[Read the notebook and its saved results](examples/retriever_outage.ipynb) · [Run in Google Colab](https://colab.research.google.com/github/pgg898200-ship-it/rankpatch/blob/main/examples/retriever_outage.ipynb)
 
 ### Replay a stream of updates
 
