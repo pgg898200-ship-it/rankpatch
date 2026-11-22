@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rankpatch"
+version = "0.1.0"
+description = "Exact top-k fusion for independently revised ranked lists"
+requires-python = ">=3.9"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["rank-fusion", "top-k", "streaming", "information-retrieval"]
+
+[project.urls]
+Repository = "https://github.com/pgg898200-ship-it/rankpatch"
+Demo = "https://huggingface.co/spaces/pgg-engineering/rankpatch"
+Benchmarks = "https://github.com/pgg898200-ship-it/rankpatch/tree/main/bench"

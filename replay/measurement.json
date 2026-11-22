@@ -1,0 +1,72 @@
+{
+  "date": "2026-11-22",
+  "compiler": "g++ (Debian 14.2.0-19) 14.2.0",
+  "build": "-std=c++17 -O3 -DNDEBUG -DRANKPATCH_REPLAY_SQLITE",
+  "sqlite": "3.46.1",
+  "cpu": "AMD EPYC 9V74 80-Core Processor, shared x86-64 host, taskset -c 0",
+  "samples": "3 independent launches, 6 warmups and 75 measured samples each; each sample averages all post-update reads and updates for one schedule",
+  "units": "nanoseconds per update + read",
+  "launch_medians": {
+    "progressive": {
+      "RankPatch": [
+        286.5,
+        338.2,
+        282.7
+      ],
+      "dense rebuild": [
+        820.1,
+        904.7,
+        815.1
+      ],
+      "dense delta": [
+        771.7,
+        898.5,
+        788.7
+      ],
+      "indexed heap": [
+        201.7,
+        235.9,
+        203.2
+      ],
+      "SQLite": [
+        18884.5,
+        11391.7,
+        8311.9
+      ]
+    },
+    "refinement": {
+      "RankPatch": [
+        1128.6,
+        862.3,
+        862.9
+      ],
+      "dense rebuild": [
+        1501.6,
+        1334.0,
+        1369.5
+      ],
+      "dense delta": [
+        1528.1,
+        1486.6,
+        1393.3
+      ],
+      "indexed heap": [
+        1008.9,
+        868.9,
+        888.9
+      ],
+      "SQLite": [
+        42081.5,
+        32152.9,
+        30495.3
+      ]
+    }
+  },
+  "sha256": {
+    "replay/scifact.txt": "2c01f62b83a0e38e782298fa85d63f179495ad132abd485e8574bd91f24a6891",
+    "replay/replay.cpp": "1946716a98d856915f1b08f058e2b8dd759df31b1bd25ea9d3e7d31f27b26cff",
+    "replay/sqlite_reference.hpp": "2fa21ffcc8f17127adb0c4c1bef45fdc2ee1d5818f7565b8e4814b566b4930b3",
+    "include/rankpatch.hpp": "632dcc2a304f82e2284de6f39f37d4c9eb7d9d0f49ef9a29e564c73e0ee28596",
+    "bench/indexed.hpp": "5de5703b0aa9dc28677382bf1364607bc388f6562e5e4945c80a9185561b8be2"
+  }
+}

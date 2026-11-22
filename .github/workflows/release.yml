@@ -1,0 +1,46 @@
+name: Check and publish source release
+on:
+  push:
+    branches: [main]
+    paths: ['release/0.1.0.md']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          c++ -std=c++17 -O2 tests/test.cpp -o /tmp/rankpatch-test
+          /tmp/rankpatch-test
+          python -m pip install . build
+          python -m unittest discover -s tests -p 'test_python.py'
+          python examples/live_search.py
+          python -m build --sdist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-distribution
+          path: dist/*.tar.gz
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: source-distribution
+          path: dist
+      - name: Publish v0.1.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v0.1.0 >/dev/null 2>&1; then exit 0; fi
+          gh release create v0.1.0 --target "$GITHUB_SHA" --title "RankPatch 0.1.0" --notes-file release/0.1.0.md dist/*.tar.gz include/rankpatch.hpp include/rankpatch_steady.hpp

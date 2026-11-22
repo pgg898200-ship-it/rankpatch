@@ -1,1 +1,80 @@
-# rankpatch
+# RankPatch
+
+Return the exact top ten after a search worker changes its mind.
+
+A keyword retriever sends its first page, a vector retriever revises its candidates, and a reranker later withdraws an answer. RankPatch replaces one worker’s contribution at a time. Use it for a long-lived query, feed, or session where clients read the combined ranking between updates.
+
+**742 ns median to replace one 32-document list and read the top ten across 1,024 sources** on our single-core-at-a-time synthetic benchmark. The fastest tested alternative took 2,003 ns. Source lists drew from 131,072 IDs. The indexed heap won a separate progressive-delivery replay on real retrieval results. [Full timing matrix](bench/README.md) · [SciFact replay](replay/README.md) · [Interactive demo](https://huggingface.co/spaces/pgg-engineering/rankpatch)
+
+## Try it
+
+Copy [rankpatch.hpp](include/rankpatch.hpp) for the buffered index or [rankpatch_steady.hpp](include/rankpatch_steady.hpp) for the indexed heap into a C++17 project. Both strategies are included in the CPython binding. Building the binding requires a C++17 compiler, CPython development headers, and pip. Runtime dependencies are limited to the platform C++ runtime. From a checkout, use `python -m pip install .`.
+
+```sh
+python -m pip install 'git+https://github.com/pgg898200-ship-it/rankpatch.git'
+```
+
+```python
+from rankpatch import Index
+
+index = Index(sources=2, universe=100, rank_points=[5, 3, 1], k=2)
+index.replace(0, 0, [7, 19])     # first page
+index.replace(1, 4, [19, 8])     # independent worker
+assert index.top() == [(19, 8), (7, 5)]
+index.replace(0, 1, [8, 7])      # reranker revises the first list
+assert index.top() == [(8, 8), (19, 5)]
+assert not index.replace(0, 0, [7, 19])  # late delivery
+index.replace(1, 5, [])          # withdraw worker 1
+assert index.top() == [(8, 5), (7, 3)]
+```
+
+[Run three concurrent workers or pipe JSON Lines from your own stack](examples/live_search.py). For an end-to-end search example, the [SQLite FTS5 and scikit-learn adapter](integrations/hybrid/README.md) merges actual lexical and nearest-neighbor results, maps string IDs, and preserves document metadata. To reproduce a fused ranking, store each source’s revision and payload along with the rank-point table and ID mapping.
+
+## Scoring and integration contract
+
+| Input | Contract |
+|---|---|
+| Source | Fixed integer ID in `[0, sources)`. Use one index per independently fused query. |
+| Document | Dense integer ID in `[0, universe)`. Keep the ID mapping stable while the index is live. |
+| Payload | Whole ordered list of distinct documents. An empty list retracts all contributions from that source. |
+| Revision | Unsigned 64-bit integer, strictly increasing within a source. Zero is a valid first revision. Retries and older deliveries return false. |
+| Score | Document at zero-based position i contributes `rank_points[i]` to its total. Points are positive 32-bit integers. Totals are unsigned 64-bit. Shorter lists use the same prefix of weights. |
+| Output | Up to k active documents, higher score first, smaller document ID first on ties. C++ returns a borrowed reference. Python returns a snapshot. |
+
+Integer Borda weights such as `[3, 2, 1]` are exact. Integer approximations to reciprocal rank use the stated rounding rule and can differ from mathematical RRF. The index needs one writer or external synchronization. A coordinator can own the index while workers send revision messages. Retrieval, transport, persistence and worker scheduling belong to the calling application.
+
+## How the update works
+
+RankPatch stores a ballot per source and a score per document. A replacement combines the old and new contribution before changing the score. An adjacent swap of a previously validated ballot only changes two scores. The index keeps extra candidates around the top-k boundary and tracks the score and ID that a challenger must beat. A change below that boundary can leave the cached result valid. When too few candidates remain, the next read rescans active documents. This is an implementation of a well-established materialized top-k idea. [Yi et al., ICDE 2003](https://cse.hkust.edu.hk/~yike/topk/)
+
+Replace takes O(old length + new length). An unchanged cached result can be read in O(1) in C++. A refresh over C candidates takes expected O(C + k log k). A refill can inspect every active ID, including on consecutive adversarial reads. Python additionally materializes up to k output tuples. Dense score and position arrays require about 20 bytes per configured document ID **before** source ballots, candidate buffers and result storage. Map sparse external IDs before allocating an index.
+
+## Choosing a strategy
+
+Use the default `strategy="buffered"` for frequent small edits, especially with many independent sources and limited overlap. Use `strategy="steady"` when entire groups of leading documents may disappear together. The steady strategy keeps the winners sorted and the remaining documents in an indexed heap, so a withdrawal can promote the next document directly. It also preserves the API, tie order and score contract. In C++, construct `rankpatch::SteadyIndex` for this behavior. Choose a strategy when creating the index.
+
+The [65,536-source stress test](bench/stress/README.md) exercises both random replacements and sustained withdrawal of tied leaders. Each measurement uses one process with 65,536 logical sources. This test includes p99.9, peak RSS, event hashes and independent full-rebuild checkpoints.
+
+## When to choose it
+
+| Workload | Evidence |
+|---|---|
+| Many active sources revise or retract short lists; clients read after each update | RankPatch at 1,024 dilute-overlap sources took 742 ns p50 / 1,482 ns p99 for replacements, and 510 ns / 1,222 ns for retraction or restore. |
+| Small fan-in, single final merge | A rebuild is simple and sometimes faster. Four-source dilute replacements measured 851 ns p50 for a rebuild and 981 ns for RankPatch. |
+| Short pages that only grow | On our SciFact progressive replay, the indexed heap averaged 203 ns per update/read versus 287 ns for RankPatch. |
+| Existing service needs durability or cross-process transactions | SQLite and streaming databases provide capabilities outside the in-process kernel. The SciFact replay includes an in-memory, prepared-statement SQLite comparator. |
+
+The synthetic matrix covers 18 scenarios. An exact oracle checked 442,368 timed snapshots. The SciFact replay uses actual document order from six retrieval methods and models delivery order. Both measure local reducer work. Neither run measures end-to-end search latency or relevance. [Machine-readable synthetic results](bench/results.csv) · [Replay measurements](replay/measurement.json)
+
+## Verify
+
+```sh
+c++ -O2 -std=c++17 tests/test.cpp -o /tmp/rankpatch-test
+/tmp/rankpatch-test
+python -m unittest discover -s tests -p 'test_python.py'
+python examples/live_search.py
+```
+
+To report a replication, open a [GitHub issue](https://github.com/pgg898200-ship-it/rankpatch/issues) with source count, list length, overlap, edit pattern, k, CPU/compiler and the raw timings for all implementations. Small, losing and tie-heavy workloads are welcome. Redacted ID-only traces are sufficient.
+
+Original code is Apache-2.0. The derived SciFact fixture retains CC BY 4.0. [Code license](LICENSE) · [Data attribution](replay/README.md)

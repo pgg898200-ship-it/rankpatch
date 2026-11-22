@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="description" content="Try exact positional rank fusion. Update or retract a source and see deterministic top-k results with a per-source score breakdown.">
+<title>RankPatch · Live rank fusion</title>
+<style>
+:root{--bg:#f5f4ef;--ink:#17261e;--muted:#536257;--line:#d3dbd0;--panel:#fffefa;--dark:#182e24;--accent:#dbfb87;--s0:#265f48;--s1:#9374ad;--s2:#c27b35;--mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Consolas,monospace;--sans:'DM Sans',Inter,ui-sans-serif,system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}button,input,textarea,select{font:inherit}button,summary,select{cursor:pointer}a{color:inherit}button:focus-visible,summary:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid #188d65;outline-offset:3px}
+.shell{width:min(1100px,calc(100% - 48px));margin:auto}header{background:var(--dark);color:white}.nav{display:flex;align-items:center;gap:12px;padding:20px 0;border-bottom:1px solid #415348}.brand{font-weight:800;font-size:19px;letter-spacing:-.7px}.mark{display:inline-flex;gap:3px;height:22px;align-items:flex-end}.mark i{display:block;background:var(--accent);width:5px}.mark i:nth-child(1){height:9px}.mark i:nth-child(2){height:15px}.mark i:nth-child(3){height:22px}.nav a{margin-left:auto;color:#e5eddc;font-size:14px;text-decoration:none}.nav a:hover{text-decoration:underline}.hero{padding:35px 0 40px}.hero h1{font-size:clamp(36px,6vw,70px);letter-spacing:-.065em;font-weight:600;line-height:1.05;margin:0 0 15px;color:#f9faf4}.hero-actions{display:flex;gap:10px 20px;align-items:center;flex-wrap:wrap;margin-top:18px}.hero-actions a{font-size:14px;text-underline-offset:4px}.hero-actions .install{background:var(--accent);color:var(--ink);text-decoration:none;font-weight:650;border-radius:6px;padding:8px 12px}.hero-actions .install:hover{background:#e7ffaf}.hero p{color:#d1ddcb;max-width:665px;font-size:clamp(16px,2vw,19px);margin:0;line-height:1.55}
+main{padding:30px 0 50px}.grid{display:grid;grid-template-columns:minmax(270px,.88fr) minmax(330px,1.12fr);align-items:start;gap:22px}.panel,details{background:var(--panel);border:1px solid var(--line);border-radius:12px}.panel{padding:22px}.titleline{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}h2{font-size:23px;line-height:1.15;letter-spacing:-.05em;margin:0}.mono,pre,input,textarea,code,select{font-family:var(--mono);font-variant-numeric:tabular-nums}.small{font-size:13px;color:var(--muted)}button{border:1px solid var(--line);border-radius:6px;background:#fffefa;color:var(--ink);font-weight:600}button:hover{background:#ebf1e6}button:active{transform:translateY(1px)}
+.sources{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.src{text-align:left;padding:9px;font-size:13px}.src[aria-pressed=true]{background:#e8f0df;border-color:#5a735f;box-shadow:inset 0 0 0 1px #5a735f}.src small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px/1.5 var(--mono);font-weight:400;color:var(--muted);margin-top:4px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}.s0{background:var(--s0)}.s1{background:var(--s1)}.s2{background:var(--s2)}.snapshot{padding:12px 0;border-bottom:1px solid var(--line);display:flex;gap:6px;flex-wrap:wrap;align-items:center}.snapshot code{font-size:12px;overflow-wrap:anywhere}.fields{display:grid;gap:13px;margin-top:14px}.label{display:block;font-size:13px;font-weight:650;margin-bottom:4px}.fieldrow{display:flex;align-items:center;justify-content:space-between;gap:8px}.linkbtn{border:none;background:none;padding:2px 0;color:#295c40;text-decoration:underline;text-underline-offset:3px;font-size:12px}.linkbtn:hover{background:none;color:#0c3822}textarea,input,select{border:1px solid #bdc9be;background:white;border-radius:6px;color:var(--ink);font-size:14px}input,textarea{padding:9px 10px;width:100%}textarea{display:block;min-height:50px;resize:vertical;line-height:1.55}select{padding:5px 9px}.buttons{display:flex;gap:8px;flex-wrap:wrap}.buttons button{padding:8px 13px}.buttons .primary{background:var(--dark);color:white;border-color:var(--dark)}.buttons .primary:hover{background:#30533d}.status{font-size:13px;margin:13px 0 0;color:var(--muted);min-height:22px;overflow-wrap:anywhere}.status.bad{color:#83370c}.status.good{color:#21543b}
+.topcontrol{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}.resultwrap{min-height:205px}.results{border-collapse:collapse;width:100%;font-size:14px}.results th{color:var(--muted);font-weight:550;font-size:12px;text-align:left}.results th,.results td{padding:9px 5px;border-bottom:1px solid #e6e8df}.results th:first-child,.results td:first-child{padding-left:0}.results th:last-child,.results td:last-child{text-align:right;padding-right:0}.results td{font-family:var(--mono);white-space:nowrap}.results tr:last-child td{border-bottom:0}.position{color:var(--muted);font-size:12px}.track{height:12px;display:flex;background:#edf0e9;border-radius:3px;overflow:hidden;min-width:45px}.track span{height:100%;display:block}.score{font-weight:bold}.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:7px}.rule{font-size:13px;color:var(--muted);margin:10px 0 0}.empty{padding:28px 0;color:var(--muted)}details{margin:18px 0 0;padding:0 20px}summary{font-weight:650;padding:15px 0;font-size:15px}details p{margin:0 0 12px;font-size:14px;color:var(--muted)}pre{font-size:12px;line-height:1.65;white-space:pre;overflow:auto;background:#1e3027;color:#eef5e7;border-radius:7px;padding:15px;max-width:100%}.foot{margin:14px 0 0;display:flex;align-items:center;justify-content:space-between;gap:15px;color:var(--muted);font-size:12px}.foot button{flex:none}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.shell{width:calc(100% - 32px)}.hero{padding:26px 0 30px}.panel{padding:17px}.grid{gap:14px}.resultwrap{min-height:0}.nav{padding:13px 0}main{padding-top:16px}}@media(max-width:390px){.shell{width:calc(100% - 20px)}.src{padding:6px}.foot{align-items:flex-start}.panel{padding:14px}}
+</style>
+</head>
+<body>
+<header><div class="shell"><div class="nav"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span><span class="brand">RankPatch</span><a href="#cpp" id="cpp-link">C++ example ↓</a></div><div class="hero"><h1>Live rank fusion</h1><p>RankPatch maintains the exact top k as retrievers revise or retract ranked lists. Paste your own document IDs below to see each source’s contribution.</p><nav class="hero-actions" aria-label="Project resources"><a class="install" href="https://github.com/pgg898200-ship-it/rankpatch" target="_blank" rel="noopener noreferrer">Install from GitHub ↗</a><a href="https://github.com/pgg898200-ship-it/rankpatch/blob/HEAD/replay/README.md" target="_blank" rel="noopener noreferrer">Reproduce the SciFact benchmark ↗</a></nav></div></div></header>
+<main class="shell"><div class="grid">
+<section class="panel" aria-labelledby="source-title"><div class="titleline"><h2 id="source-title">Update a source</h2></div>
+<div class="sources" id="sources" aria-label="Choose a source"></div>
+<div class="snapshot"><span class="small">Current list</span><code id="snapshot"></code></div>
+<form id="form"><div class="fields">
+<div><div class="fieldrow"><label for="ids" class="label">Ranked document IDs</label><button class="linkbtn" id="swap" type="button">Swap first two</button></div><textarea id="ids" aria-describedby="accepted" spellcheck="false" rows="2" autocomplete="off"></textarea><div class="small" id="accepted">JSON array of up to five unique IDs, each 0–999.</div></div>
+<div><label class="label" for="revision">Source revision</label><input id="revision" type="text" inputmode="numeric" spellcheck="false" autocomplete="off"></div>
+<div class="buttons"><button type="submit" class="primary">Replace list</button><button id="retract" type="button">Retract list</button></div></div></form>
+<p class="status" id="status" aria-live="polite"></p></section>
+<section class="panel" aria-labelledby="rank-title"><div class="titleline"><h2 id="rank-title">Fused ranking</h2><label class="topcontrol">Top <select id="k" aria-label="Results to show"><option>1</option><option>3</option><option selected>5</option><option>10</option></select></label></div><div class="resultwrap" id="result"></div><div class="legend" id="legend"></div><p class="rule">Positions 1–5 earn <strong>8, 5, 3, 2, 1</strong> points. Equal totals sort by ascending document ID.</p></section>
+</div>
+<details id="cpp"><summary>Run this state in C++17</summary><p>This example updates as you edit. Save it as <code>example.cpp</code> in the RankPatch checkout, then run the command below.</p><pre id="code"></pre><pre>c++ -O3 -std=c++17 -Iinclude example.cpp -o example &amp;&amp; ./example</pre></details>
+<div class="foot"><span>In-browser JavaScript reference implementation. Scores are recomputed locally after each change.</span><button class="linkbtn" id="reset" type="button">Reset example</button></div>
+</main>
+<script>
+'use strict';
+const labels = ['Lexical', 'Vector', 'Reranker'];
+const points = [8,5,3,2,1];
+const initial = [[7,14,21,11,9], [21,7,14,12,9], [14,7,11,21,10]];
+const maxRev = (1n << 64n) - 1n;
+const el = id => document.getElementById(id);
+let state, selected;
+function say(message, tone='') {
+  el('status').textContent = message;
+  el('status').className = 'status '+tone;
+}
+function reset() {
+  state = initial.map(ids => ({ids: ids.slice(), rev: 0n}));
+  selected = 0;
+  el('k').value = '5';
+  render();
+  loadEditor();
+  say('Swap the first two IDs and apply revision 1 to try a change.');
+}
+function loadEditor() {
+  const item = state[selected];
+  el('ids').value = JSON.stringify(item.ids);
+  el('snapshot').textContent = JSON.stringify(item.ids);
+  el('revision').value = String(item.rev < maxRev ? item.rev+1n : maxRev);
+}
+function readIds() {
+  let ids;
+  try { ids = JSON.parse(el('ids').value); }
+  catch { throw Error('Enter a JSON array such as [7,14,21].'); }
+  if (!Array.isArray(ids) || ids.length > points.length || ids.some(id => !Number.isInteger(id) || id<0 || id>=1000) || new Set(ids).size!==ids.length) {
+    throw Error('Use at most five distinct integer IDs in the range 0–999.');
+  }
+  return ids;
+}
+function apply(retract) {
+  try {
+    const raw = el('revision').value.trim();
+    if (!/^\d+$/.test(raw) || BigInt(raw)>maxRev) throw Error('Enter an unsigned 64-bit integer revision.');
+    const rev = BigInt(raw);
+    const prev = state[selected];
+    if (rev <= prev.rev) {
+      say('Ignored revision '+rev+'. '+labels[selected]+' is already at revision '+prev.rev+'.', 'bad');
+      return;
+    }
+    const ids = retract ? [] : readIds();
+    state[selected] = {ids, rev};
+    render();
+    loadEditor();
+    say(labels[selected]+' '+(ids.length?'updated':'retracted')+' at revision '+rev+'.','good');
+  } catch (error) { say(error.message, 'bad'); }
+}
+function fuse() {
+  const byId = new Map();
+  state.forEach(({ids}, s) => ids.forEach((id, i) => {
+    if (!byId.has(id)) byId.set(id, {id, total:0, parts:[0,0,0]});
+    const row = byId.get(id);
+    row.parts[s] = points[i];
+    row.total += points[i];
+  }));
+  return [...byId.values()].sort((a,b) => b.total-a.total || a.id-b.id).slice(0, Number(el('k').value));
+}
+function render() {
+  el('sources').innerHTML = state.map(({rev}, i) =>
+    '<button type="button" class="src" data-src="'+i+'" aria-pressed="'+(i===selected)+'"><span class="dot s'+i+'"></span>'+labels[i]+'<small title="Revision '+rev+'">rev '+rev+'</small></button>').join('');
+  const rows = fuse();
+  const ranked = rows.map(({id,total,parts}, i) => {
+    const description = parts.map((v,s) => labels[s]+' '+v).join(', ');
+    const bars = parts.map((v,s) => '<span class="s'+s+'" style="width:'+(100*v/rows[0].total)+'%"></span>').join('');
+    return '<tr><td class="position">'+(i+1)+'</td><td>'+id+'</td><td><div class="track" role="img" title="'+description+'" aria-label="'+description+'">'+bars+'</div></td><td class="score">'+total+'</td></tr>';
+  }).join('');
+  el('result').innerHTML = rows.length ? '<table class="results"><thead><tr><th scope="col">Rank</th><th scope="col">Doc ID</th><th scope="col">Source points</th><th scope="col">Total</th></tr></thead><tbody>'+ranked+'</tbody></table>' : '<div class="empty">All sources are empty. Replace a list to add results.</div>';
+  el('legend').innerHTML = labels.map((name,i) => '<span><span class="dot s'+i+'"></span>'+name+'</span>').join('');
+  const updates = state.map(({ids,rev},i) => '    index.replace('+i+', '+rev+'ULL, {'+ids.join(', ')+'});');
+  el('code').textContent = ['#include "rankpatch.hpp"', '#include <iostream>', '', 'int main() {',
+    '    rankpatch::Index index(3, 1000, {8, 5, 3, 2, 1}, '+el('k').value+');', ...updates,
+    '    for (const auto& [id, score] : index.top())', '        std::cout << id << " " << score << "\\n";', '}'].join('\n');
+}
+el('form').addEventListener('submit', e => {e.preventDefault(); apply(false);});
+el('sources').addEventListener('click', e => {
+  const button = e.target.closest('[data-src]');
+  if (!button) return;
+  selected = Number(button.dataset.src);
+  render(); loadEditor(); say('');
+  el('sources').querySelector('[data-src="'+selected+'"]').focus();
+});
+el('swap').addEventListener('click', () => {
+  try {
+    const ids = readIds();
+    if (ids.length < 2) throw Error('Enter at least two IDs to swap them.');
+    [ids[0], ids[1]] = [ids[1], ids[0]];
+    el('ids').value = JSON.stringify(ids);
+    say('Draft changed. Select Replace list to submit it.');
+  } catch (error) {say(error.message,'bad');}
+});
+el('retract').addEventListener('click', () => apply(true));
+el('reset').addEventListener('click', reset);
+el('k').addEventListener('change', render);
+el('cpp-link').addEventListener('click', () => {el('cpp').open=true;});
+reset();
+</script>
+</body>
+</html>

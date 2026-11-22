@@ -1,0 +1,69 @@
+{
+  "sources": 65536,
+  "depth": 16,
+  "universe": 1048576,
+  "k": 10,
+  "seed": 20261122,
+  "scenarios": {
+    "replace": {
+      "rankpatch": {
+        "samples": 4096,
+        "p50_ns": 1782,
+        "p99_ns": 3015,
+        "p999_ns": 52397,
+        "max_ns": 182180,
+        "timed_ops_per_second": 493115.47,
+        "peak_rss_kib": 43264
+      },
+      "heap": {
+        "samples": 4096,
+        "p50_ns": 4337,
+        "p99_ns": 5778,
+        "p999_ns": 26149,
+        "max_ns": 39959,
+        "timed_ops_per_second": 223615.09,
+        "peak_rss_kib": 45312
+      },
+      "steady": {
+        "samples": 4096,
+        "p50_ns": 4267,
+        "p99_ns": 6850,
+        "p999_ns": 43014,
+        "max_ns": 79788,
+        "timed_ops_per_second": 212120.83,
+        "peak_rss_kib": 40576
+      },
+      "full_rebuild_checkpoints": 17
+    },
+    "withdraw": {
+      "steady": {
+        "samples": 4096,
+        "p50_ns": 7581,
+        "p99_ns": 206927,
+        "p999_ns": 421514,
+        "max_ns": 5417775,
+        "timed_ops_per_second": 51411.22,
+        "peak_rss_kib": 46592
+      },
+      "heap": {
+        "samples": 4096,
+        "p50_ns": 11227,
+        "p99_ns": 149551,
+        "p999_ns": 272764,
+        "max_ns": 346643,
+        "timed_ops_per_second": 56720.57,
+        "peak_rss_kib": 51328
+      },
+      "rankpatch": {
+        "samples": 4096,
+        "p50_ns": 574349,
+        "p99_ns": 73243116,
+        "p999_ns": 193564532,
+        "max_ns": 359690774,
+        "timed_ops_per_second": 78.44,
+        "peak_rss_kib": 50688
+      },
+      "full_rebuild_checkpoints": 17
+    }
+  }
+}

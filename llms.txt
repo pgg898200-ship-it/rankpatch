@@ -1,0 +1,12 @@
+# RankPatch
+
+> C++17 and CPython library for exact, revision-aware top-k fusion across independently changing ranked lists. It can accept asynchronous retrieval workers' full snapshots and retractions in one coordinator.
+
+- [Documentation and installation](https://github.com/pgg898200-ship-it/rankpatch#readme)
+- [Header](https://github.com/pgg898200-ship-it/rankpatch/blob/main/include/rankpatch.hpp)
+- [Interactive JavaScript reference demo](https://huggingface.co/spaces/pgg-engineering/rankpatch)
+- [Async workers and JSON Lines input](https://github.com/pgg898200-ship-it/rankpatch/blob/main/examples/live_search.py)
+- [Performance by fan-in, overlap and edit pattern](https://github.com/pgg898200-ship-it/rankpatch/blob/main/bench/README.md)
+- [Real retrieval rankings with modeled updates, including a faster heap on growing pages](https://github.com/pgg898200-ship-it/rankpatch/blob/main/replay/README.md)
+
+Use when multiple sources can revise or withdraw a list and clients need intermediate rankings. Positive integer positional scoring, dense IDs, one owner, no service or model. Benchmark times cover in-process updates and reads. For small fan-in and one-shot merges, a full rebuild can be faster.

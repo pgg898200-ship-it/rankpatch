@@ -1,0 +1,51 @@
+{
+  "repo": "breuert/scrydb-eval",
+  "revision": "ea5a009b6b0af4f2d164e95abca057090210db77",
+  "range_bytes": 1048576,
+  "runs": [
+    {
+      "path": "runs/beir/scifact-bm25.txt",
+      "range_sha256": "c43597e3ce3a2c2267f09fbfd997fe2680d41f2afd36c34bb32e33884be61d53"
+    },
+    {
+      "path": "runs/beir/scifact-cosine_float.txt",
+      "range_sha256": "85d98d22ac169ac49a9ce481690e51bcfebd2a4827e57df5c3a3c3eba6b8f4bd"
+    },
+    {
+      "path": "runs/beir/scifact-cosine_int8.txt",
+      "range_sha256": "68afbd82b0f76c87bafee2f3e88ddbbbeaf9062e465a9650a684c182a5968419"
+    },
+    {
+      "path": "runs/beir/scifact-hamming.txt",
+      "range_sha256": "5c3c2cade4d2ef4cba1f002252c186273735c5c9cf659b80600363c64ff39c46"
+    },
+    {
+      "path": "runs/beir/scifact-bm25-hamming.txt",
+      "range_sha256": "cd3af1a5100592cebc75a7f80a897854a834ce6f3c46e0522018360cb491ea53"
+    },
+    {
+      "path": "runs/beir/scifact-hamming-cosine_float.txt",
+      "range_sha256": "0074208eef8812ff1ada777eb3dc14ba2d24663359fec6687233626fe998e409"
+    }
+  ],
+  "depth": 32,
+  "queries": [
+    0,
+    1,
+    10,
+    100,
+    1000,
+    1001,
+    1002,
+    1003,
+    1004,
+    1005,
+    1006,
+    1008,
+    1009,
+    1011,
+    1012,
+    1014
+  ],
+  "fixture_sha256": "2c01f62b83a0e38e782298fa85d63f179495ad132abd485e8574bd91f24a6891"
+}
