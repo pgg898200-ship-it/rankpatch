@@ -1,4 +1,4 @@
-<img align="right" src="docs/product-mark.svg" width="88" height="88" alt="A replacement strip fits into a ranked list.">
+<img align="right" src="docs/product-mark.svg" width="88" height="88" alt="Two document rows exchange positions after a source revises its ranking. The blue row moves upward.">
 
 # RankPatch
 
