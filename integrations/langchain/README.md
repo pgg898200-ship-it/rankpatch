@@ -1,0 +1,30 @@
+# Stream a fused search result with LangChain
+
+Show the first search results while the remaining retrievers work. This example queries titles and bodies in parallel, publishes a combined top three on each update, and revises it when a phrase reranker finishes. It runs on six local documents and requires no model or API key.
+
+From the repository root, install RankPatch and the example dependencies into a Python environment with a C++17 compiler available.
+
+```sh
+python -m pip install . -r integrations/langchain/requirements.txt
+python -m integrations.langchain.stream_search
+python -m unittest integrations.langchain.test_stream_search
+```
+
+For the query `prefix cache`, the title search first favors **Prefix cache routing**. Its reranker promotes **Cache eviction** because the document body contains the exact phrase. Body search also ranks **Cache eviction** first. The final snapshot awards it 6 points, 3 from each source. Intermediate snapshots follow completion order.
+
+## Connect your retrievers
+
+Use [stream_search.py](stream_search.py) in the coordinator for one query. Its `stream_top` function takes a mapping of source names to LangChain runnables. Wrap a retriever that returns one list of LangChain documents like this.
+
+```python
+sources = {
+    "lexical": lexical_retriever | RunnableLambda(lambda docs: Revision(0, docs)),
+    "vector": vector_retriever | RunnableLambda(lambda docs: Revision(0, docs)),
+}
+async for source, version, hits in stream_top(query, sources, catalog, [3, 2, 1], 3):
+    render_results([hit.document for hit in hits])
+```
+
+Set a stable `Document.id` on each result and keep a catalog mapping those IDs to the original documents. Each list contains distinct IDs and fits the rank-point table. A source can emit multiple complete lists with increasing versions, as `title_updates` does. Send an empty list to withdraw it. A late or repeated version leaves the current ranking in place. The coordinator returns canonical documents with their original text and metadata, even when a retriever works on a different representation.
+
+The example uses [LangChain RunnableParallel](https://reference.langchain.com/python/langchain-core/runnables/base/RunnableParallel) to stream branch outputs and the [existing RankPatch catalog adapter](../hybrid/catalog.py) to apply revisions. The output sums integer rank points and breaks ties by ascending catalog ID.
