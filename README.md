@@ -58,7 +58,7 @@ python examples/live_search.py --stdin < bench/your_trace/example.jsonl
 |---|---|
 | Concurrent search workers sending JSON Lines | [Stream messages into one coordinator](examples/live_search.py) |
 | A LangChain retriever or RAG context builder | [Fuse ranked Document IDs and return the original Documents](integrations/hybrid/README.md#langchain-retrievers) |
-| SQLite FTS5 or scikit-learn nearest neighbors | [Map string IDs, ranked cursors and neighbor indices](integrations/hybrid/README.md) |
+| SQLite FTS5 or scikit-learn nearest neighbors | [Use string document IDs with `rankpatch.catalog` from a source install](integrations/hybrid/README.md) |
 | A coding agent | [API contract, integration recipes and evidence](llms.txt) |
 
 To reproduce a fused ranking, store each source’s revision and payload along with the rank-point table and ID mapping.

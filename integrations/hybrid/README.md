@@ -1,19 +1,17 @@
 # Live hybrid document search
 
-Use `CatalogFusion` when a keyword retriever, nearest-neighbor index and reranker can send revised ranked lists for the same query. It accepts string document IDs, translates them to the dense integers used by RankPatch, and returns the original document objects with their fused scores. The example executes real SQLite FTS5 queries and real scikit-learn neighbor searches over five documents.
+Use `CatalogFusion` to combine revised search results by string ID. Give it one document catalog per query. Each worker replaces its own ranked list, and each winning hit carries its original document and fused score.
 
-From the repository root, run
+Install the adapter from this checkout. It uses only RankPatch and the Python standard library.
 
 ```sh
-python -m pip install . scikit-learn==1.8.0
-python integrations/hybrid/example.py
-python -m unittest discover -s integrations/hybrid -p test_hybrid.py
+python -m pip install .
 ```
 
-Use a Python installation with SQLite FTS5 enabled. The example and tests ran with CPython 3.12.14, SQLite 3.53.1 and scikit-learn 1.8.0. The adapter itself imports only RankPatch and the Python standard library. Copy `catalog.py` into a consumer project or import it from a checkout.
+The published v0.1.0 wheels predate this module. For projects pinned to that release, copy [catalog.py](../../python/rankpatch/catalog.py) next to your application and import `CatalogFusion` from `catalog`.
 
 ```python
-from integrations.hybrid.catalog import CatalogFusion
+from rankpatch.catalog import CatalogFusion
 
 fusion = CatalogFusion(
     sources=["keyword", "vector", "reranker"],
@@ -26,6 +24,16 @@ fusion.replace("reranker", 3, ["b"])
 assert [(hit.id, hit.score) for hit in fusion.top()] == [("b", 12), ("a", 7)]
 assert fusion.top()[0].document["title"] == "Decoding"
 fusion.replace("reranker", 4, [])  # remove this source's previous contribution
+```
+
+## SQLite and scikit-learn
+
+The [five-document example](example.py) uses SQLite FTS5 and scikit-learn nearest neighbors. Run it from a checkout with SQLite FTS5 enabled.
+
+```sh
+python -m pip install scikit-learn==1.8.0
+python integrations/hybrid/example.py
+python -m unittest discover -s integrations/hybrid -p test_hybrid.py
 ```
 
 For SQLite, set `connection.row_factory = sqlite3.Row` and pass an ordered cursor to `replace_sqlite(source, revision, cursor, id_column="doc_id")`. For scikit-learn, pass one query's neighbor indices to `replace_neighbors(source, revision, indices, fit_ids=fit_ids)`. Preserve the IDs in training-matrix row order in `fit_ids`, including when rebuilding the neighbor index.

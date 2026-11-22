@@ -5,7 +5,7 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import InMemoryVectorStore
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from catalog import CatalogFusion
+from rankpatch.catalog import CatalogFusion
 
 
 class LocalEmbeddings(Embeddings):
