@@ -61,6 +61,8 @@ python examples/live_search.py --stdin < bench/your_trace/example.jsonl
 
 To reproduce a fused ranking, store each source’s revision and payload along with the rank-point table and ID mapping.
 
+[Stream search results with LangChain](integrations/langchain/README.md). Run two local retrievers in parallel and update the top three as each returns or revises its ranking.
+
 ## Scoring and integration contract
 
 | Input | Contract |
