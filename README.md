@@ -4,11 +4,11 @@ Return the exact top ten after a search worker changes its mind.
 
 A keyword retriever sends its first page, a vector retriever revises its candidates, and a reranker later withdraws an answer. RankPatch replaces one worker’s contribution at a time. Use it for a long-lived query, feed, or session where clients read the combined ranking between updates.
 
-**742 ns median to replace one 32-document list and read the top ten across 1,024 sources** on our single-core-at-a-time synthetic benchmark. The fastest tested alternative took 2,003 ns. Source lists drew from 131,072 IDs. The indexed heap won a separate progressive-delivery replay on real retrieval results. [Full timing matrix](bench/README.md) · [SciFact replay](replay/README.md) · [Interactive demo](https://huggingface.co/spaces/pgg-engineering/rankpatch)
+**742 ns median to replace one 32-document list and read the top ten across 1,024 sources** in our single-threaded synthetic benchmark. The fastest tested alternative took 2,003 ns. Source lists drew from 131,072 IDs. The indexed heap won a separate progressive-delivery replay on real retrieval results. [Full timing matrix](bench/README.md) · [SciFact replay](replay/README.md) · [Interactive demo](https://huggingface.co/spaces/pgg-engineering/rankpatch)
 
 ## Try it
 
-Copy [rankpatch.hpp](include/rankpatch.hpp) for the buffered index or [rankpatch_steady.hpp](include/rankpatch_steady.hpp) for the indexed heap into a C++17 project. Both strategies are included in the CPython binding. Building the binding requires a C++17 compiler, CPython development headers, and pip. Runtime dependencies are limited to the platform C++ runtime. From a checkout, use `python -m pip install .`.
+Copy [rankpatch.hpp](include/rankpatch.hpp) for the buffered index or [rankpatch_steady.hpp](include/rankpatch_steady.hpp) for the indexed heap into a C++17 project. Both strategies are included in the CPython binding. Building the binding requires a C++17 compiler, CPython development headers, and pip. The Python binding adds no third-party Python runtime dependencies. From a checkout, use `python -m pip install .`.
 
 ```sh
 python -m pip install 'git+https://github.com/pgg898200-ship-it/rankpatch.git'
@@ -51,7 +51,7 @@ Replace takes O(old length + new length). An unchanged cached result can be read
 
 ## Choosing a strategy
 
-Use the default `strategy="buffered"` for frequent small edits, especially with many independent sources and limited overlap. Use `strategy="steady"` when entire groups of leading documents may disappear together. The steady strategy keeps the winners sorted and the remaining documents in an indexed heap, so a withdrawal can promote the next document directly. It also preserves the API, tie order and score contract. In C++, construct `rankpatch::SteadyIndex` for this behavior. Choose a strategy when creating the index.
+Use the default `strategy="buffered"` for frequent small edits, especially with many independent sources and limited overlap. Use `strategy="steady"` when entire groups of leading documents may disappear together. The steady strategy keeps the winners sorted and the remaining documents in an indexed heap, so a withdrawal can promote the next document directly. It also preserves the API, tie order and score contract. In C++, construct `rankpatch::SteadyIndex` for this behavior. Choose a strategy when creating the index. [Compare both strategies on your own JSONL trace](bench/your_trace/README.md) to measure p50 and p99 locally. The comparison report contains no document IDs.
 
 The [65,536-source stress test](bench/stress/README.md) exercises both random replacements and sustained withdrawal of tied leaders. Each measurement uses one process with 65,536 logical sources. This test includes p99.9, peak RSS, event hashes and independent full-rebuild checkpoints.
 
@@ -63,6 +63,8 @@ The [65,536-source stress test](bench/stress/README.md) exercises both random re
 | Small fan-in, single final merge | A rebuild is simple and sometimes faster. Four-source dilute replacements measured 851 ns p50 for a rebuild and 981 ns for RankPatch. |
 | Short pages that only grow | On our SciFact progressive replay, the indexed heap averaged 203 ns per update/read versus 287 ns for RankPatch. |
 | Existing service needs durability or cross-process transactions | SQLite and streaming databases provide capabilities outside the in-process kernel. The SciFact replay includes an in-memory, prepared-statement SQLite comparator. |
+
+The [Python comparison with RankOps 0.1.26](bench/rankops/README.md) uses released packages, Borda scoring and the same SciFact list contents. With a prebuilt dense-ID mapping for RankPatch, updating and reading after each progressive delivery took 1.50 µs with the steady strategy and 10.93 µs with RankOps native top-10. RankOps was faster for a cold one-shot merge starting from string IDs. The comparison also checks the two libraries’ different tie-ordering rules.
 
 The synthetic matrix covers 18 scenarios. An exact oracle checked 442,368 timed snapshots. The SciFact replay uses actual document order from six retrieval methods and models delivery order. Both measure local reducer work. Neither run measures end-to-end search latency or relevance. [Machine-readable synthetic results](bench/results.csv) · [Replay measurements](replay/measurement.json)
 

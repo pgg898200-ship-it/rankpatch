@@ -1,0 +1,2 @@
+rankpatch @ https://github.com/pgg898200-ship-it/rankpatch/releases/download/v0.1.0/rankpatch-0.1.0.tar.gz --hash=sha256:6ea94931937e3714e662647b8744789d758c7224393e1cabeebeb33a814eee57
+rankops @ https://files.pythonhosted.org/packages/69/2a/f538d97153c0a403793060faf88aeffd6e3f54fad81e4a048752fa708baa/rankops-0.1.26-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl --hash=sha256:e2b4cfb11bb274c6165f93c2b4c204a769635935a6c3d2a4fc44c1e841c312f5

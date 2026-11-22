@@ -1,0 +1,229 @@
+{
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "fixture_sha256": "2c01f62b83a0e38e782298fa85d63f179495ad132abd485e8574bd91f24a6891",
+  "packages": {
+    "rankpatch": {
+      "version": "0.1.0",
+      "file": "rankpatch-0.1.0.tar.gz",
+      "sha256": "6ea94931937e3714e662647b8744789d758c7224393e1cabeebeb33a814eee57",
+      "url": "https://github.com/pgg898200-ship-it/rankpatch/releases/download/v0.1.0/rankpatch-0.1.0.tar.gz"
+    },
+    "rankops": {
+      "version": "0.1.26",
+      "file": "rankops-0.1.26-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+      "sha256": "e2b4cfb11bb274c6165f93c2b4c204a769635935a6c3d2a4fc44c1e841c312f5",
+      "url": "https://files.pythonhosted.org/packages/69/2a/f538d97153c0a403793060faf88aeffd6e3f54fad81e4a048752fa708baa/rankops-0.1.26-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl"
+    }
+  },
+  "units": "ns per emitted snapshot",
+  "cpu": "AMD EPYC 9V74 80-Core Processor on a shared host; taskset -c 0",
+  "compiler": "g++ (Debian 14.2.0-19) 14.2.0 for RankPatch, official binary wheel for rankops",
+  "documents_per_list_max": 32,
+  "k": 10,
+  "launches": 3,
+  "measured_replays_per_launch": 31,
+  "warmup_replays_per_launch": 4,
+  "script_sha256": "2b985cf8738d6295b373acf50729c133fe4a4ce890058d80104f73a2772715c6",
+  "samples_csv_sha256": "d4d100cc8bee0cea7369bfed33af75acffbc4fc8f35bad478b30cd9621f97a6c",
+  "results": {
+    "progressive": {
+      "queries": 16,
+      "snapshots": 384,
+      "rankops_native_exact": 251,
+      "launch_medians": {
+        "buffered": [
+          1793.2682291666667,
+          1396.9505208333333,
+          1966.390625
+        ],
+        "steady": [
+          1497.8307291666667,
+          1359.6510416666667,
+          1812.9114583333333
+        ],
+        "rankops native": [
+          10930.796875,
+          8497.208333333334,
+          11745.231770833334
+        ],
+        "rankops canonical": [
+          14239.268229166666,
+          12610.4609375,
+          17569.825520833332
+        ]
+      },
+      "median_ns": {
+        "buffered": 1793.2682291666667,
+        "steady": 1497.8307291666667,
+        "rankops native": 10930.796875,
+        "rankops canonical": 14239.268229166666
+      }
+    },
+    "refinement": {
+      "queries": 16,
+      "snapshots": 96,
+      "rankops_native_exact": 60,
+      "launch_medians": {
+        "buffered": [
+          2018.7916666666667,
+          2917.4375,
+          2839.0729166666665
+        ],
+        "steady": [
+          2002.3125,
+          2701.8854166666665,
+          2632.3854166666665
+        ],
+        "rankops native": [
+          11510.635416666666,
+          17197.65625,
+          15771.697916666666
+        ],
+        "rankops canonical": [
+          17972.770833333332,
+          28438.375,
+          26381.083333333332
+        ]
+      },
+      "median_ns": {
+        "buffered": 2839.0729166666665,
+        "steady": 2632.3854166666665,
+        "rankops native": 15771.697916666666,
+        "rankops canonical": 26381.083333333332
+      }
+    },
+    "one merge (6 lists)": {
+      "queries": 16,
+      "snapshots": 16,
+      "rankops_native_exact": 13,
+      "launch_medians": {
+        "buffered": [
+          6429.75,
+          9497.875,
+          9394.0
+        ],
+        "steady": [
+          7790.75,
+          11750.3125,
+          11424.75
+        ],
+        "rankops native": [
+          20928.3125,
+          35679.0625,
+          35101.875
+        ],
+        "rankops canonical": [
+          31519.25,
+          52894.5,
+          52103.1875
+        ]
+      },
+      "median_ns": {
+        "buffered": 9394.0,
+        "steady": 11424.75,
+        "rankops native": 35101.875,
+        "rankops canonical": 52103.1875
+      }
+    },
+    "one merge (3 lists)": {
+      "queries": 16,
+      "snapshots": 16,
+      "rankops_native_exact": 9,
+      "launch_medians": {
+        "buffered": [
+          5532.0625,
+          3856.25,
+          4178.625
+        ],
+        "steady": [
+          6151.875,
+          4286.3125,
+          4578.0
+        ],
+        "rankops native": [
+          17612.3125,
+          11645.125,
+          13055.5
+        ],
+        "rankops canonical": [
+          27070.75,
+          19817.75,
+          19137.9375
+        ]
+      },
+      "median_ns": {
+        "buffered": 4178.625,
+        "steady": 4578.0,
+        "rankops native": 13055.5,
+        "rankops canonical": 19817.75
+      }
+    },
+    "one merge (6 lists, cold strings)": {
+      "queries": 16,
+      "snapshots": 16,
+      "rankops_native_exact": 13,
+      "launch_medians": {
+        "buffered": [
+          37342.375,
+          25463.125,
+          27092.625
+        ],
+        "steady": [
+          38963.1875,
+          26914.25,
+          30366.0625
+        ],
+        "rankops native": [
+          34276.1875,
+          21954.9375,
+          25595.25
+        ],
+        "rankops canonical": [
+          49969.6875,
+          32746.8125,
+          34997.3125
+        ]
+      },
+      "median_ns": {
+        "buffered": 27092.625,
+        "steady": 30366.0625,
+        "rankops native": 25595.25,
+        "rankops canonical": 34997.3125
+      }
+    },
+    "one merge (3 lists, cold strings)": {
+      "queries": 16,
+      "snapshots": 16,
+      "rankops_native_exact": 9,
+      "launch_medians": {
+        "buffered": [
+          20786.1875,
+          19109.0625,
+          19550.4375
+        ],
+        "steady": [
+          20185.1875,
+          18920.0,
+          19758.9375
+        ],
+        "rankops native": [
+          18096.25,
+          18426.6875,
+          18704.0
+        ],
+        "rankops canonical": [
+          28809.8125,
+          27908.9375,
+          27940.3125
+        ]
+      },
+      "median_ns": {
+        "buffered": 19550.4375,
+        "steady": 19758.9375,
+        "rankops native": 18426.6875,
+        "rankops canonical": 27940.3125
+      }
+    }
+  }
+}
