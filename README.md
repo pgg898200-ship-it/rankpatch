@@ -32,6 +32,8 @@ assert index.top() == [(8, 5), (7, 3)]
 
 [Run three concurrent workers or pipe JSON Lines from your own stack](examples/live_search.py). For an end-to-end search example, the [SQLite FTS5 and scikit-learn adapter](integrations/hybrid/README.md) merges actual lexical and nearest-neighbor results, maps string IDs, and preserves document metadata. To reproduce a fused ranking, store each source’s revision and payload along with the rank-point table and ID mapping.
 
+[Stream search results with LangChain](integrations/langchain/README.md). Run two local retrievers in parallel and update the top three as each returns or revises its ranking.
+
 ## Scoring and integration contract
 
 | Input | Contract |
