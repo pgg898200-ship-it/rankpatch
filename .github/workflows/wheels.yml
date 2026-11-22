@@ -1,0 +1,173 @@
+name: Build and publish v0.1.0 wheels
+on:
+  push:
+    branches: [main]
+    paths: [release/wheels-0.1.0.md]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: rankpatch-wheels-v0.1.0
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: v0.1.0
+  RELEASE_COMMIT: 81da2bf6dc5ac41a0c0de6e0e9f942b21a261e03
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {runner: ubuntu-24.04, target: manylinux_x86_64, arch: x86_64}
+          - {runner: macos-15, target: macosx_arm64, arch: arm64}
+          - {runner: windows-2022, target: win_amd64, arch: AMD64}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/v0.1.0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Reuse existing release assets and select missing builds
+        id: select
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET: ${{ matrix.target }}
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import subprocess
+
+          def command(*args):
+              return subprocess.check_output(args, text=True).strip()
+
+          tag = os.environ["RELEASE_TAG"]
+          repo = os.environ["GITHUB_REPOSITORY"]
+          if command("git", "rev-parse", "HEAD") != os.environ["RELEASE_COMMIT"]:
+              raise SystemExit(f"{tag} no longer points at the expected release commit")
+          release = json.loads(command("gh", "api", f"repos/{repo}/releases/tags/{tag}"))
+          target = os.environ["TARGET"]
+          platform = {
+              "manylinux_x86_64": "manylinux_2_28_x86_64",
+              "macosx_arm64": "macosx_11_0_arm64",
+              "win_amd64": "win_amd64",
+          }[target]
+          dest = pathlib.Path("wheelhouse")
+          dest.mkdir()
+          builds = []
+          for abi in ("cp311", "cp312", "cp313"):
+              prefix = f"rankpatch-0.1.0-{abi}-{abi}-"
+              matches = [a for a in release["assets"] if a["name"].startswith(prefix)
+                         and a["name"].endswith(".whl")
+                         and platform in a["name"][len(prefix):-4].split(".")]
+              if len(matches) > 1:
+                  raise SystemExit(f"Ambiguous release assets for {abi}/{target}")
+              if not matches:
+                  builds.append(f"{abi}-{target}")
+                  continue
+              asset = matches[0]
+              name = asset["name"]
+              subprocess.run(["gh", "release", "download", tag, "--repo", repo,
+                              "--pattern", name, "--dir", str(dest)], check=True)
+              digest = "sha256:" + hashlib.sha256((dest / name).read_bytes()).hexdigest()
+              if asset.get("digest") and digest != asset["digest"]:
+                  raise SystemExit(f"Digest mismatch: {name}")
+              print(f"Reusing {name}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              print("builds=" + " ".join(builds), file=out)
+      - name: Install wheel builder
+        if: steps.select.outputs.builds != ''
+        run: python -m pip install cibuildwheel==4.3.5
+      - name: Build and test missing wheels in isolated interpreters
+        if: steps.select.outputs.builds != ''
+        env:
+          CIBW_BUILD: ${{ steps.select.outputs.builds }}
+          CIBW_ARCHS: ${{ matrix.arch }}
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=11.0
+          CIBW_TEST_COMMAND: 'python "{project}/tests/test_python.py"'
+        run: python -m cibuildwheel --output-dir wheelhouse
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.target }}
+          path: wheelhouse/*.whl
+          if-no-files-found: error
+          overwrite: true
+
+  publish:
+    runs-on: ubuntu-24.04
+    needs: build
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          merge-multiple: true
+          path: wheelhouse
+      - name: Attach missing wheels to the existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import subprocess
+          import tempfile
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          tag = os.environ["RELEASE_TAG"]
+          api = ["gh", "api", f"repos/{repo}/releases/tags/{tag}"]
+          release = json.loads(subprocess.check_output(api))
+          existing = {a["name"]: a for a in release["assets"]}
+          wheels = sorted(pathlib.Path("wheelhouse").glob("rankpatch-0.1.0-*.whl"))
+          if len(wheels) != 9:
+              raise SystemExit(f"Expected nine distinct wheels, received {len(wheels)}")
+          pending = []
+          for path in wheels:
+              asset = existing.get(path.name)
+              if asset is None:
+                  pending.append(path)
+                  continue
+              digest = asset.get("digest")
+              if not digest:
+                  with tempfile.TemporaryDirectory() as tmp:
+                      subprocess.run(["gh", "release", "download", tag, "--repo", repo,
+                                      "--pattern", path.name, "--dir", tmp], check=True)
+                      digest = "sha256:" + hashlib.sha256((pathlib.Path(tmp) / path.name).read_bytes()).hexdigest()
+              if "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+                  raise SystemExit(f"Existing asset has different bytes: {path.name}")
+              print(f"Already published: {path.name}")
+          for path in pending:
+              subprocess.run(["gh", "release", "upload", tag, str(path), "--repo", repo], check=True)
+
+  install:
+    needs: publish
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, macos-15, windows-2022]
+        python: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/v0.1.0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Verify the public binary install command
+        run: >-
+          python -m pip install --no-index --only-binary=:all: --find-links https://github.com/pgg898200-ship-it/rankpatch/releases/expanded_assets/v0.1.0 rankpatch==0.1.0
+      - run: python tests/test_python.py
