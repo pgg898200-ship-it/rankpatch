@@ -8,11 +8,13 @@ A keyword retriever sends its first page, a vector retriever revises its candida
 
 ## Try it
 
-Copy [rankpatch.hpp](include/rankpatch.hpp) for the buffered index or [rankpatch_steady.hpp](include/rankpatch_steady.hpp) for the indexed heap into a C++17 project. Both strategies are included in the CPython binding. Building the binding requires a C++17 compiler, CPython development headers, and pip. The Python binding adds no third-party Python runtime dependencies. From a checkout, use `python -m pip install .`.
+Install a prebuilt wheel for CPython 3.11–3.13 on Linux x86-64 (glibc 2.28+), Apple Silicon (macOS 11+) or Windows x86-64. This installs the package directly from the GitHub release.
 
 ```sh
-python -m pip install 'git+https://github.com/pgg898200-ship-it/rankpatch.git'
+python -m pip install --no-index --only-binary=:all: --find-links https://github.com/pgg898200-ship-it/rankpatch/releases/expanded_assets/v0.1.0 rankpatch==0.1.0
 ```
+
+For C++17, copy [rankpatch.hpp](include/rankpatch.hpp) for buffered updates or [rankpatch_steady.hpp](include/rankpatch_steady.hpp) for the indexed heap. Each header stands alone. For other Python source builds, install the [source distribution](https://github.com/pgg898200-ship-it/rankpatch/releases/download/v0.1.0/rankpatch-0.1.0.tar.gz) with a C++17 compiler, CPython development headers and pip. From a checkout, use `python -m pip install .`.
 
 ```python
 from rankpatch import Index
