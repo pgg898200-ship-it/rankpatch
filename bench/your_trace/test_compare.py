@@ -1,5 +1,8 @@
 import argparse
+import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -24,6 +27,25 @@ class TraceTests(unittest.TestCase):
         for result in report["results"].values():
             self.assertEqual(result["samples"], 14)
             self.assertGreaterEqual(result["p99_ns"], result["p50_ns"])
+
+    def test_cli_bundled_example(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = subprocess.check_output(
+                [sys.executable, HERE / "compare.py"], cwd=tmp, text=True
+            )
+        report = json.loads(output)
+        self.assertEqual(report["trace"]["events"], 7)
+        self.assertEqual(report["measured_passes"], 3)
+        for result in report["results"].values():
+            self.assertEqual(result["samples"], 21)
+
+    def test_cli_custom_trace_needs_bounds(self):
+        result = subprocess.run(
+            [sys.executable, HERE / "compare.py", HERE / "example.jsonl", "--k", "2"],
+            capture_output=True, text=True,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("--sources, --universe, --rank-points", result.stderr)
 
     def test_ties_stale_retract(self):
         oracle = Rebuild([5], 2)

@@ -2,15 +2,13 @@
 
 Measure the time your Python caller spends replacing a worker's ranked list and reading the winners. Each event runs through the buffered index, the steady index, and a Python implementation that rebuilds all scores and sorts every active document. The tool checks the applied flag and the entire ordered output after every event. A mismatch stops the run with a line number.
 
-Run these commands from a RankPatch checkout with its Python package installed.
+From a checkout with RankPatch installed, replay the bundled example.
 
 ```sh
-python bench/your_trace/compare.py bench/your_trace/example.jsonl \
-  --sources 3 --universe 16 --rank-points 5,3,1 --k 3 --repeats 3
-python -m unittest discover -s bench/your_trace -p test_compare.py
+python bench/your_trace/compare.py
 ```
 
-The seven-line example captures the three workers from [live_search.py](../../examples/live_search.py). It includes revision zero, a stale replay, and a retraction. Use it to check the command. Seven events yield a noisy p99.
+The fixture replays seven updates from three workers, including one stale revision and one withdrawal. Three measured passes give 21 timing samples per strategy. Use the example to check the tool and a longer trace to estimate p99. [Live search example](../../examples/live_search.py)
 
 ## Replay a local file
 

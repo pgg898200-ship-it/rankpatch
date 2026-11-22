@@ -3,8 +3,8 @@ import argparse
 from array import array
 import hashlib
 import json
+from pathlib import Path
 import platform
-import sys
 from time import perf_counter_ns
 
 from rankpatch import Index, __version__
@@ -13,6 +13,8 @@ from rankpatch import Index, __version__
 MAX_SAMPLES = 1_000_000
 MAX_LINE = 4 * 1024 * 1024
 NAMES = ("buffered", "steady", "python_rebuild")
+EXAMPLE_TRACE = Path(__file__).with_name("example.jsonl")
+EXAMPLE_INDEX = {"sources": 3, "universe": 16, "rank_points": [5, 3, 1], "k": 3}
 
 
 class Rebuild:
@@ -42,9 +44,32 @@ def uint(value, upper, field):
     return value
 
 
+def parse_event(raw, config, ballots):
+    event = json.loads(raw)
+    if not isinstance(event, dict) or not {"source", "revision", "ids"} <= event.keys():
+        raise ValueError("expected object with source, revision, ids")
+    source = uint(event["source"], config["sources"], "source")
+    revision = uint(event["revision"], 2**64, "revision")
+    ids = event["ids"]
+    if not isinstance(ids, list):
+        raise ValueError("ids must be an array")
+    # Source/revision validation precedes payload validation in RankPatch.
+    # Stale arrays are passed through unchanged, even when their IDs are invalid.
+    old = ballots.get(source)
+    if old is None or revision > old[0]:
+        if len(ids) > len(config["rank_points"]):
+            raise ValueError("ballot too long")
+        for doc in ids:
+            uint(doc, config["universe"], "document ID")
+        if len(set(ids)) != len(ids):
+            raise ValueError("duplicate document ID")
+    return source, revision, ids
+
+
 def pass_once(path, config, order, timings, limit):
     engines = {name: Index(**config, strategy=name) for name in ("buffered", "steady")}
-    engines["python_rebuild"] = Rebuild(config["rank_points"], config["k"])
+    oracle = Rebuild(config["rank_points"], config["k"])
+    engines["python_rebuild"] = oracle
     sha = hashlib.sha256()
     events = ignored = retractions = 0
     with open(path, "rb") as stream:
@@ -59,24 +84,7 @@ def pass_once(path, config, order, timings, limit):
             if events >= limit:
                 raise ValueError("trace exceeds sample limit; lower --repeats or use a smaller trace")
             try:
-                event = json.loads(raw)
-                if not isinstance(event, dict) or not {"source", "revision", "ids"} <= event.keys():
-                    raise ValueError("expected object with source, revision, ids")
-                source = uint(event["source"], config["sources"], "source")
-                rev = uint(event["revision"], 2**64, "revision")
-                ids = event["ids"]
-                if not isinstance(ids, list):
-                    raise ValueError("ids must be an array")
-                # Source/revision validation precedes payload validation in RankPatch.
-                # Stale arrays are passed through unchanged, even when their IDs are invalid.
-                old = engines["python_rebuild"].ballots.get(source)
-                if old is None or rev > old[0]:
-                    if len(ids) > len(config["rank_points"]):
-                        raise ValueError("ballot too long")
-                    for doc in ids:
-                        uint(doc, config["universe"], "document ID")
-                    if len(set(ids)) != len(ids):
-                        raise ValueError("duplicate document ID")
+                source, rev, ids = parse_event(raw, config, oracle.ballots)
             except (ValueError, RecursionError) as exc:
                 raise ValueError(f"line {line_no}: {exc}") from None
             observed = {}
@@ -140,13 +148,21 @@ def run(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("trace", help="local JSON Lines file")
-    parser.add_argument("--sources", type=int, required=True)
-    parser.add_argument("--universe", type=int, required=True)
-    parser.add_argument("--k", type=int, required=True)
-    parser.add_argument("--rank-points", type=points_arg, required=True)
+    parser.add_argument("trace", nargs="?", type=Path, help="local JSON Lines file (default: bundled example)")
+    parser.add_argument("--sources", type=int)
+    parser.add_argument("--universe", type=int)
+    parser.add_argument("--k", type=int)
+    parser.add_argument("--rank-points", type=points_arg)
     parser.add_argument("--repeats", type=int, default=3)
     args = parser.parse_args()
+    missing = [name for name in EXAMPLE_INDEX if getattr(args, name) is None]
+    if args.trace is None:
+        args.trace = EXAMPLE_TRACE
+        for name in missing:
+            setattr(args, name, EXAMPLE_INDEX[name])
+    elif missing:
+        flags = ", ".join("--" + name.replace("_", "-") for name in missing)
+        parser.error(f"provide {flags} when replaying a local trace")
     try:
         report = run(args)
     except (ValueError, IndexError, OverflowError, OSError, MemoryError) as exc:
