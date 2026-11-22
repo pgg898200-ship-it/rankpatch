@@ -33,3 +33,29 @@ For SQLite, set `connection.row_factory = sqlite3.Row` and pass an ordered curso
 The catalog and source names are fixed at construction. Use one fusion index per active query and serialize updates for that query. Equal scores follow ascending Python string order, independent of arrival order. Unknown document IDs reject a fresh snapshot and preserve the previous revision. A retraction removes a source's votes while keeping its revision watermark. The caller owns document contents, and mutations to returned documents are visible through the catalog.
 
 Each instance builds a dense ID map over its entire supplied catalog. For a large index, the caller can supply a bounded per-session candidate catalog if it covers all possible revisions. RankPatch measures the cost of maintaining the fused result after a retrieval update. SQLite query execution, vector search, and Python document materialization add separate costs.
+
+## LangChain retrievers
+
+A LangChain retriever returns a ranked list of `Document` objects. Give each chunk a stable string ID shared across retrievers. Pass the IDs in result order to RankPatch after each worker finishes. Read the winners before building the model’s context. Each hit retains its original catalog document, including page content and metadata.
+
+The [runnable example](langchain_example.py) uses a local LangChain `InMemoryVectorStore` and TF-IDF vectors. It expands one search from one hit to two, applies an editorial ranking, withdraws it and rejects a replay. Run it from a checkout with RankPatch installed.
+
+```sh
+python -m pip install langchain-core==1.8.4 scikit-learn==1.8.0
+python integrations/hybrid/langchain_example.py
+```
+
+```text
+prefix: reuse cached prefix tokens
+evict: evict unused cached blocks
+```
+
+For an existing retriever, the handoff below assumes one coordinator owns the `fusion` instance and its catalog contains every possible result ID. Set `Document.id` when indexing chunks, or use your canonical chunk-ID metadata field in its place.
+
+```python
+results = retriever.invoke(query)
+fusion.replace("search", revision, (doc.id for doc in results))
+context_docs = [hit.document for hit in fusion.top()]
+```
+
+[LangChain retriever interface](https://docs.langchain.com/oss/python/integrations/retrievers)

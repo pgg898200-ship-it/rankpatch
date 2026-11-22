@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="246" viewBox="0 0 800 246" role="img" aria-labelledby="title desc">
+  <title id="title">One revised list changes the winner</title>
+  <desc id="desc">Keyword changes from [7,19] to [8,7]. Vector stays [19,8]. First position earns five points and second earns three. Document 8 moves from third to first with eight points.</desc>
+  <rect width="800" height="246" rx="16" fill="#182e24"/>
+  <g font-family="system-ui, sans-serif" fill="#f8faef">
+    <text x="32" y="42" font-size="26" font-weight="650">One revised list changes the winner.</text>
+    <text x="32" y="72" font-size="18" fill="#c8d7c6">Keyword [7, 19] → [8, 7]</text>
+    <text x="419" y="72" font-size="18" fill="#c8d7c6">Vector holds [19, 8]</text>
+  </g>
+  <g font-family="ui-monospace, monospace" font-size="15" fill="#c8d7c6" letter-spacing="1.5">
+    <text x="32" y="109">BEFORE</text>
+    <text x="584" y="109">AFTER</text>
+  </g>
+  <g fill="none" stroke-width="4" stroke-linecap="round">
+    <path d="M226 138 C385 138 405 177 554 177" stroke="#b59bca"/>
+    <path d="M226 177 C385 177 405 216 554 216" stroke="#f2b572"/>
+    <path d="M226 216 C385 216 405 138 554 138" stroke="#182e24" stroke-width="11"/>
+    <path d="M226 216 C385 216 405 138 554 138" stroke="#dbfb87"/>
+  </g>
+  <g font-family="ui-monospace, monospace" font-size="20">
+    <g fill="#d8c2e6"><text x="32" y="145">Doc 19 · 8 pts</text><text x="584" y="184">Doc 19 · 5 pts</text></g>
+    <g fill="#f4c595"><text x="32" y="184">Doc 7  · 5 pts</text><text x="584" y="223">Doc 7  · 3 pts</text></g>
+    <g fill="#dbfb87" font-weight="700"><text x="32" y="223">Doc 8  · 3 pts</text><text x="584" y="145">Doc 8  · 8 pts</text></g>
+  </g>
+</svg>

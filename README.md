@@ -1,10 +1,14 @@
 # RankPatch
 
-Return the exact top ten after a search worker changes its mind.
+**Keep search results ranked as workers revise them.**
 
-A keyword retriever sends its first page, a vector retriever revises its candidates, and a reranker later withdraws an answer. RankPatch replaces one worker’s contribution at a time. Use it for a long-lived query, feed, or session where clients read the combined ranking between updates.
+RankPatch is an in-process C++17 and Python library for incremental top-k rank fusion. Put one index in the coordinator for each live query. Keyword, vector and reranking workers send it ordered document IDs. After each update, your search UI or RAG context builder can read the current winners and their scores.
 
-**742 ns median to replace one 32-document list and read the top ten across 1,024 sources** in our single-threaded synthetic benchmark. The fastest tested alternative took 2,003 ns. Source lists drew from 131,072 IDs. The indexed heap won a separate progressive-delivery replay on real retrieval results. [Full timing matrix](bench/README.md) · [SciFact replay](replay/README.md) · [Interactive demo](https://huggingface.co/spaces/pgg-engineering/rankpatch)
+[Try a revision in the browser](https://huggingface.co/spaces/pgg-engineering/rankpatch) · [Install RankPatch](#try-it) · [Connect a retriever](integrations/hybrid/README.md)
+
+![A keyword worker promotes document 8. With five points for first place and three for second, its combined score rises from three to eight and it becomes the top result.](docs/revision.svg)
+
+**742 ns** median to replace a 32-document list and read the top ten in the single-threaded C++ benchmark with 1,024 sources and a 131,072-ID universe. The fastest tested alternative in that case took 2,003 ns. An indexed heap won on the progressive SciFact replay. These timings cover the local fusion step. [Timing matrix](bench/README.md) · [SciFact replay](replay/README.md)
 
 ## Try it
 
@@ -21,16 +25,35 @@ from rankpatch import Index
 
 index = Index(sources=2, universe=100, rank_points=[5, 3, 1], k=2)
 index.replace(0, 0, [7, 19])     # first page
-index.replace(1, 4, [19, 8])     # independent worker
+index.replace(1, 4, [19, 8])     # vector worker
 assert index.top() == [(19, 8), (7, 5)]
-index.replace(0, 1, [8, 7])      # reranker revises the first list
+index.replace(0, 1, [8, 7])      # keyword worker revises its list
 assert index.top() == [(8, 8), (19, 5)]
 assert not index.replace(0, 0, [7, 19])  # late delivery
 index.replace(1, 5, [])          # withdraw worker 1
 assert index.top() == [(8, 5), (7, 3)]
 ```
 
-[Run three concurrent workers or pipe JSON Lines from your own stack](examples/live_search.py). For an end-to-end search example, the [SQLite FTS5 and scikit-learn adapter](integrations/hybrid/README.md) merges actual lexical and nearest-neighbor results, maps string IDs, and preserves document metadata. To reproduce a fused ranking, store each source’s revision and payload along with the rank-point table and ID mapping.
+### Replay a stream of updates
+
+From a checkout with RankPatch installed, this command plays seven example messages through the Python API. Each input line contains a source ID, a revision number and the complete ranked list. The last line replays an older revision. Its `applied` flag is false and the three winners keep their scores.
+
+```sh
+python examples/live_search.py --stdin < bench/your_trace/example.jsonl
+```
+
+```json
+{"source":0,"revision":1,"applied":false,"top":[[5,8],[7,6],[2,3]]}
+```
+
+| To connect it to | Start here |
+|---|---|
+| Concurrent search workers sending JSON Lines | [Stream messages into one coordinator](examples/live_search.py) |
+| A LangChain retriever or RAG context builder | [Fuse ranked Document IDs and return the original Documents](integrations/hybrid/README.md#langchain-retrievers) |
+| SQLite FTS5 or scikit-learn nearest neighbors | [Map string IDs, ranked cursors and neighbor indices](integrations/hybrid/README.md) |
+| A coding agent | [API contract, integration recipes and evidence](llms.txt) |
+
+To reproduce a fused ranking, store each source’s revision and payload along with the rank-point table and ID mapping.
 
 ## Scoring and integration contract
 
