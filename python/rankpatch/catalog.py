@@ -18,7 +18,7 @@ class Hit(Generic[Document]):
 class CatalogFusion(Generic[Document]):
     """Owned by one query/coordinator. Documents are returned by reference."""
 
-    def __init__(self, *, sources, documents: Mapping[str, Document], rank_points, k):
+    def __init__(self, *, sources, documents: Mapping[str, Document], rank_points, k, strategy="buffered"):
         if isinstance(sources, str):
             raise TypeError("sources must be an iterable of names")
         names = tuple(sources)
@@ -33,7 +33,7 @@ class CatalogFusion(Generic[Document]):
         self._keys = sorted(documents)
         self._rows = {key: i for i, key in enumerate(self._keys)}
         self._documents = [documents[key] for key in self._keys]
-        self._index = Index(len(names), len(self._keys), rank_points, k)
+        self._index = Index(len(names), len(self._keys), rank_points, k, strategy=strategy)
 
     def replace(self, source, revision, doc_ids):
         """Apply a complete ordered snapshot, or [] to withdraw the source."""

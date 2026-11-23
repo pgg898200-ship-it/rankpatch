@@ -1,4 +1,5 @@
 """Run after pip install . with: python -m unittest discover -s tests -p test_python.py"""
+from collections import Counter
 import unittest
 
 from rankpatch import Index
@@ -55,6 +56,29 @@ class SteadyTests(BindingContract, unittest.TestCase):
 
 
 class CatalogTests(unittest.TestCase):
+    def test_withdrawing_tied_leaders(self):
+        keys = [f"doc-{i:02}" for i in range(32)]
+        docs = {key: object() for key in reversed(keys)}
+        names = [f"worker-{i}" for i in range(16)]
+        for strategy in ("buffered", "steady"):
+            with self.subTest(strategy=strategy):
+                fusion = CatalogFusion(sources=names, documents=docs,
+                                       rank_points=[1, 1], k=3, strategy=strategy)
+                ballots = {}
+                for revision in (0, 1):
+                    for i, name in enumerate(names):
+                        ids = keys[2*i:2*i+2] if revision == 0 else []
+                        self.assertTrue(fusion.replace(name, revision, ids))
+                        ballots[name] = ids
+                        scores = Counter(key for ballot in ballots.values() for key in ballot)
+                        expected = sorted(scores.items(), key=lambda row: (-row[1], row[0]))[:3]
+                        self.assertEqual([(h.id, h.score) for h in fusion.top()], expected)
+
+    def test_unknown_strategy_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "strategy"):
+            CatalogFusion(sources=["a"], documents={"doc": None},
+                          rank_points=[1], k=1, strategy="unknown")
+
     def test_mapping_failure_preserves_revision(self):
         documents = {key: object() for key in ("spec/cache", "spec/decode", "spec/ledger", "spec/shard")}
         fusion = CatalogFusion(sources=("a", "b"), documents=documents,

@@ -26,6 +26,13 @@ assert fusion.top()[0].document["title"] == "Decoding"
 fusion.replace("reranker", 4, [])  # remove this source's previous contribution
 ```
 
+For retrievers that frequently withdraw tied leaders, pass `strategy="steady"` to
+`CatalogFusion`. The default is `"buffered"`. Both return the same ordered hits.
+In the [65,536-source C++ stress test](../../bench/stress/README.md), steady reduced
+p99 on tied withdrawals, while buffered had lower p99 on sparse replacements.
+These timings cover the native update and top-ten read. Measure your own stream
+including ID mapping, Python hit construction and retrieval.
+
 ## SQLite and scikit-learn
 
 The [five-document example](example.py) uses SQLite FTS5 and scikit-learn nearest neighbors. Run it from a checkout with SQLite FTS5 enabled.
