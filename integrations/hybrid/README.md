@@ -47,7 +47,49 @@ For SQLite, set `connection.row_factory = sqlite3.Row` and pass an ordered curso
 
 The catalog and source names are fixed at construction. Use one fusion index per active query and serialize updates for that query. Equal scores follow ascending Python string order, independent of arrival order. Unknown document IDs reject a fresh snapshot and preserve the previous revision. A retraction removes a source's votes while keeping its revision watermark. The caller owns document contents, and mutations to returned documents are visible through the catalog.
 
-Each instance builds a dense ID map over its entire supplied catalog. For a large index, the caller can supply a bounded per-session candidate catalog if it covers all possible revisions. RankPatch measures the cost of maintaining the fused result after a retrieval update. SQLite query execution, vector search, and Python document materialization add separate costs.
+## Reuse a catalog across queries
+
+When several queries use the same documents, build the string-ID mapping once.
+Create a fresh fusion index for each query. Each index owns its scores, source
+revisions and dense native arrays. The catalog holds the ordered keys, row lookup
+and references to the original documents.
+
+```python
+from rankpatch.catalog import CatalogFusion, DocumentCatalog
+
+catalog = DocumentCatalog({"a": {"title": "Caching"}, "b": {"title": "Decoding"}})
+first = CatalogFusion(sources=["keyword"], documents=catalog, rank_points=[2, 1], k=1)
+second = CatalogFusion(sources=["keyword"], documents=catalog, rank_points=[2, 1], k=1)
+first.replace("keyword", 8, ["a", "b"])
+second.replace("keyword", 0, ["b"])
+assert [first.top()[0].id, second.top()[0].id] == ["a", "b"]
+```
+
+A plain mapping still works. Both forms snapshot catalog membership at
+construction. Build a new catalog for a changed set of IDs. Dense native storage
+per live query still scales with catalog size, so a bounded candidate catalog
+can be preferable for sparse queries on a large corpus.
+
+### Measured cost on the SciFact replay
+
+Run `python replay/shared_catalog.py` from a checkout after installing it.
+The [bundled fixture and provenance](../../replay/README.md) supply six final
+32-document rankings per query. Both paths start with the same 768-key dictionary.
+Each timed batch includes mapping preparation, fresh buffered indexes, six
+replacements per query and one materialized top ten per query. A full score
+rebuild checks every output outside timing, using ascending string ID on ties.
+
+| Queries sharing the corpus | Plain mapping (µs/query) | Shared catalog (µs/query) |
+|---|---:|---:|
+| 1 | 84.59 | 84.00 |
+| 16 | 93.60 | 22.84 |
+
+Values are medians of three process medians on CPython 3.12.14, Linux x86-64,
+AMD EPYC 9V45, November 24, 2026. Each process used two warmups and 30 measured
+batches per path in alternating order. The single-query case showed little
+difference. The timing begins with retrieval outputs in memory and excludes
+retrieval and transport. For a one-off merge from string IDs, the historical
+[rankops comparison](../../bench/rankops/README.md) found a faster external option.
 
 ## LangChain retrievers
 

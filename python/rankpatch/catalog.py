@@ -1,7 +1,7 @@
 """Fuse full source revisions against a fixed string-keyed document catalog."""
 from dataclasses import dataclass
 from operator import index as integer_index
-from typing import Generic, Mapping, TypeVar
+from typing import Generic, Mapping, TypeVar, Union
 
 from rankpatch import Index
 
@@ -15,10 +15,24 @@ class Hit(Generic[Document]):
     document: Document
 
 
+class DocumentCatalog(Generic[Document]):
+    """A fixed string-ID mapping that multiple query indexes can share."""
+
+    __slots__ = ("_keys", "_rows", "_documents")
+
+    def __init__(self, documents: Mapping[str, Document]):
+        if any(not isinstance(key, str) for key in documents):
+            raise TypeError("document IDs must be strings")
+        self._keys = sorted(documents)
+        self._rows = {key: i for i, key in enumerate(self._keys)}
+        self._documents = [documents[key] for key in self._keys]
+
+
 class CatalogFusion(Generic[Document]):
     """Owned by one query/coordinator. Documents are returned by reference."""
 
-    def __init__(self, *, sources, documents: Mapping[str, Document], rank_points, k, strategy="buffered"):
+    def __init__(self, *, sources, documents: Union[Mapping[str, Document], DocumentCatalog[Document]],
+                 rank_points, k, strategy="buffered"):
         if isinstance(sources, str):
             raise TypeError("sources must be an iterable of names")
         names = tuple(sources)
@@ -28,12 +42,8 @@ class CatalogFusion(Generic[Document]):
         if len(self._sources) != len(names):
             raise ValueError("duplicate source name")
 
-        if any(not isinstance(key, str) for key in documents):
-            raise TypeError("document IDs must be strings")
-        self._keys = sorted(documents)
-        self._rows = {key: i for i, key in enumerate(self._keys)}
-        self._documents = [documents[key] for key in self._keys]
-        self._index = Index(len(names), len(self._keys), rank_points, k, strategy=strategy)
+        self._catalog = documents if isinstance(documents, DocumentCatalog) else DocumentCatalog(documents)
+        self._index = Index(len(names), len(self._catalog._keys), rank_points, k, strategy=strategy)
 
     def replace(self, source, revision, doc_ids):
         """Apply a complete ordered snapshot, or [] to withdraw the source."""
@@ -42,7 +52,7 @@ class CatalogFusion(Generic[Document]):
             if isinstance(doc_ids, (str, bytes)):
                 raise TypeError("doc_ids must be an iterable of string IDs")
             for key in doc_ids:
-                yield self._rows[key]
+                yield self._catalog._rows[key]
         return self._index.replace(self._sources[source], revision, rows())
 
     def replace_sqlite(self, source, revision, rows, *, id_column="doc_id"):
@@ -63,5 +73,5 @@ class CatalogFusion(Generic[Document]):
         return self.replace(source, revision, ids())
 
     def top(self):
-        return [Hit(self._keys[i], score, self._documents[i])
+        return [Hit(self._catalog._keys[i], score, self._catalog._documents[i])
                 for i, score in self._index.top()]

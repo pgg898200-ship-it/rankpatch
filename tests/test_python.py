@@ -3,7 +3,7 @@ from collections import Counter
 import unittest
 
 from rankpatch import Index
-from rankpatch.catalog import CatalogFusion
+from rankpatch.catalog import CatalogFusion, DocumentCatalog
 
 
 class BindingContract:
@@ -56,6 +56,23 @@ class SteadyTests(BindingContract, unittest.TestCase):
 
 
 class CatalogTests(unittest.TestCase):
+    def test_queries_share_document_references_and_keep_separate_revisions(self):
+        original = object()
+        docs = {"b": object(), "a": original}
+        catalog = DocumentCatalog(docs)
+        docs.clear()
+        first, second = [
+            CatalogFusion(sources=["search"], documents=catalog, rank_points=[1, 1],
+                          k=2, strategy=strategy)
+            for strategy in ("buffered", "steady")
+        ]
+        self.assertTrue(first.replace("search", 9, ["b", "a"]))
+        self.assertEqual(second.top(), [])
+        self.assertTrue(second.replace("search", 0, ["a"]))
+        self.assertTrue(second.replace("search", 1, []))
+        self.assertEqual([hit.id for hit in first.top()], ["a", "b"])
+        self.assertIs(first.top()[0].document, original)
+
     def test_withdrawing_tied_leaders(self):
         keys = [f"doc-{i:02}" for i in range(32)]
         docs = {key: object() for key in reversed(keys)}
