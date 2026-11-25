@@ -2,10 +2,10 @@
 
 Use `CatalogFusion` to combine revised search results by string ID. Give it one document catalog per query. Each worker replaces its own ranked list, and each winning hit carries its original document and fused score.
 
-Install the adapter from this checkout. It uses only RankPatch and the Python standard library.
+The 0.2.0 wheel includes the catalog adapter. Install it on a supported platform with pip. For a source build, run `python -m pip install .` in the checkout with a C++17 compiler.
 
 ```sh
-python -m pip install .
+python -m pip install --no-index --only-binary=:all: --find-links https://github.com/pgg898200-ship-it/rankpatch/releases/expanded_assets/v0.2.0 rankpatch==0.2.0
 ```
 
 The published v0.1.0 wheels predate this module. For projects pinned to that release, copy [catalog.py](../../python/rankpatch/catalog.py) next to your application and import `CatalogFusion` from `catalog`.

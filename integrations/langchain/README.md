@@ -2,10 +2,11 @@
 
 Show the first search results while the remaining retrievers work. This example queries titles and bodies in parallel, publishes a combined top three on each update, and revises it when a phrase reranker finishes. It runs on six local documents and requires no model or API key.
 
-From the repository root, install RankPatch and the example dependencies into a Python environment with a C++17 compiler available.
+From the repository root, install the RankPatch wheel and the example dependencies. For platforms without a matching wheel, use `python -m pip install .` with a C++17 compiler for the first step.
 
 ```sh
-python -m pip install . -r integrations/langchain/requirements.txt
+python -m pip install --no-index --only-binary=:all: --find-links https://github.com/pgg898200-ship-it/rankpatch/releases/expanded_assets/v0.2.0 rankpatch==0.2.0
+python -m pip install -r integrations/langchain/requirements.txt
 python -m integrations.langchain.stream_search
 python -m unittest integrations.langchain.test_stream_search
 ```

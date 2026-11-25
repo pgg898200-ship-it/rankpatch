@@ -3,7 +3,7 @@
 > C++17 and CPython library for exact, revision-aware top-k fusion across independently changing ranked lists. It can accept asynchronous retrieval workers' full snapshots and retractions in one coordinator.
 
 - [Documentation and installation](https://github.com/pgg898200-ship-it/rankpatch#readme)
-- [Binary wheels and supported platforms](https://github.com/pgg898200-ship-it/rankpatch/blob/main/release/wheels-0.1.0.md)
+- [Binary wheels and supported platforms](https://github.com/pgg898200-ship-it/rankpatch/releases/tag/v0.2.0)
 - [Measure your own revision stream locally](https://github.com/pgg898200-ship-it/rankpatch/tree/main/bench/your_trace)
 - [Measured comparison with released rankops](https://github.com/pgg898200-ship-it/rankpatch/tree/main/bench/rankops)
 - [Header](https://github.com/pgg898200-ship-it/rankpatch/blob/main/include/rankpatch.hpp)

@@ -14,13 +14,13 @@ RankPatch is an in-process C++17 and Python library for incremental top-k rank f
 
 ## Try it
 
-Install a prebuilt wheel for CPython 3.11–3.13 on Linux x86-64 (glibc 2.28+), Apple Silicon (macOS 11+) or Windows x86-64. This installs the package directly from the GitHub release.
+Install a prebuilt wheel for CPython 3.11–3.13 on Linux x86-64 (glibc 2.28+) or Windows x86-64. For Apple Silicon, check the [0.2.0 release assets](https://github.com/pgg898200-ship-it/rankpatch/releases/tag/v0.2.0) for a matching `macosx_arm64` wheel or use the source distribution below. The wheel includes the native index and the string-ID catalog adapter.
 
 ```sh
-python -m pip install --no-index --only-binary=:all: --find-links https://github.com/pgg898200-ship-it/rankpatch/releases/expanded_assets/v0.1.0 rankpatch==0.1.0
+python -m pip install --no-index --only-binary=:all: --find-links https://github.com/pgg898200-ship-it/rankpatch/releases/expanded_assets/v0.2.0 rankpatch==0.2.0
 ```
 
-For C++17, copy [rankpatch.hpp](include/rankpatch.hpp) for buffered updates or [rankpatch_steady.hpp](include/rankpatch_steady.hpp) for the indexed heap. Each header stands alone. For other Python source builds, install the [source distribution](https://github.com/pgg898200-ship-it/rankpatch/releases/download/v0.1.0/rankpatch-0.1.0.tar.gz) with a C++17 compiler, CPython development headers and pip. From a checkout, use `python -m pip install .`.
+For C++17, copy [rankpatch.hpp](include/rankpatch.hpp) for buffered updates or [rankpatch_steady.hpp](include/rankpatch_steady.hpp) for the indexed heap. Each header stands alone. For other Python source builds, install the [source distribution](https://github.com/pgg898200-ship-it/rankpatch/releases/download/v0.2.0/rankpatch-0.2.0.tar.gz) with a C++17 compiler, CPython development headers and pip. From a checkout, use `python -m pip install .`.
 
 ```python
 from rankpatch import Index
@@ -60,7 +60,7 @@ python examples/live_search.py --stdin < bench/your_trace/example.jsonl
 |---|---|
 | Concurrent search workers sending JSON Lines | [Stream messages into one coordinator](examples/live_search.py) |
 | A LangChain retriever or RAG context builder | [Fuse ranked Document IDs and return the original Documents](integrations/hybrid/README.md#langchain-retrievers) |
-| SQLite FTS5 or scikit-learn nearest neighbors | [Use string document IDs with `rankpatch.catalog` from a source install](integrations/hybrid/README.md) |
+| SQLite FTS5 or scikit-learn nearest neighbors | [Use string document IDs with `rankpatch.catalog`](integrations/hybrid/README.md) |
 | A coding agent | [API contract, integration recipes and evidence](llms.txt) |
 
 To reproduce a fused ranking, store each source’s revision and payload along with the rank-point table and ID mapping.
