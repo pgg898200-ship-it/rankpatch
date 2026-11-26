@@ -14,7 +14,7 @@ RankPatch is an in-process C++17 and Python library for incremental top-k rank f
 
 ## Try it
 
-Install a prebuilt wheel for CPython 3.11–3.13 on Linux x86-64 (glibc 2.28+) or Windows x86-64. For Apple Silicon, check the [0.2.0 release assets](https://github.com/pgg898200-ship-it/rankpatch/releases/tag/v0.2.0) for a matching `macosx_arm64` wheel or use the source distribution below. The wheel includes the native index and the string-ID catalog adapter.
+Install a prebuilt wheel for CPython 3.11–3.13 on Linux x86-64 (glibc 2.28+), Windows x86-64, or Apple Silicon (macOS 11+). The wheel includes the native index and the string-ID catalog adapter.
 
 ```sh
 python -m pip install --no-index --only-binary=:all: --find-links https://github.com/pgg898200-ship-it/rankpatch/releases/expanded_assets/v0.2.0 rankpatch==0.2.0
