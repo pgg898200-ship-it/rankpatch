@@ -15,9 +15,14 @@ For the query `prefix cache`, the title search first favors **Prefix cache routi
 
 ## Connect your retrievers
 
-Use [stream_search.py](stream_search.py) in the coordinator for one query. Its `stream_top` function takes a mapping of source names to LangChain runnables. Wrap a retriever that returns one list of LangChain documents like this.
+With the wheel and example dependencies installed, copy [stream_search.py](stream_search.py) into your application. Run `python stream_search.py` there to replay the six-document example. The file imports the catalog adapter directly from the wheel.
+
+In your query coordinator, pass `stream_top` a mapping of source names to LangChain runnables. Wrap a retriever that returns one list of LangChain documents like this.
 
 ```python
+from langchain_core.runnables import RunnableLambda
+from stream_search import Revision, stream_top
+
 sources = {
     "lexical": lexical_retriever | RunnableLambda(lambda docs: Revision(0, docs)),
     "vector": vector_retriever | RunnableLambda(lambda docs: Revision(0, docs)),
@@ -28,4 +33,4 @@ async for source, version, hits in stream_top(query, sources, catalog, [3, 2, 1]
 
 Set a stable `Document.id` on each result and keep a catalog mapping those IDs to the original documents. Each list contains distinct IDs and fits the rank-point table. A source can emit multiple complete lists with increasing versions, as `title_updates` does. Send an empty list to withdraw it. A late or repeated version leaves the current ranking in place. The coordinator returns canonical documents with their original text and metadata, even when a retriever works on a different representation.
 
-The example uses [LangChain RunnableParallel](https://reference.langchain.com/python/langchain-core/runnables/base/RunnableParallel) to stream branch outputs and the [existing RankPatch catalog adapter](../hybrid/catalog.py) to apply revisions. The output sums integer rank points and breaks ties by ascending catalog ID.
+The example uses [LangChain RunnableParallel](https://reference.langchain.com/python/langchain-core/runnables/base/RunnableParallel) to stream branch outputs and the [packaged RankPatch catalog adapter](../../python/rankpatch/catalog.py) to apply revisions. The output sums integer rank points and breaks ties by ascending catalog ID.

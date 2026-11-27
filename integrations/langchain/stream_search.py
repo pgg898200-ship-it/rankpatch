@@ -6,7 +6,7 @@ from langchain_core.documents import Document
 from langchain_core.runnables import RunnableLambda, RunnableParallel
 from rank_bm25 import BM25L
 
-from integrations.hybrid.catalog import CatalogFusion
+from rankpatch.catalog import CatalogFusion
 
 
 @dataclass
