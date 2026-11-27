@@ -1,6 +1,7 @@
 """Stream ranked documents to a RAG client as LangChain retrievers finish."""
 import asyncio
 from dataclasses import dataclass
+from itertools import islice
 
 from langchain_core.documents import Document
 from langchain_core.runnables import RunnableLambda, RunnableParallel
@@ -15,12 +16,26 @@ class Revision:
     documents: list[Document]
 
 
-async def stream_top(query, sources, catalog, rank_points, k):
+def _parent_ids(documents, key):
+    seen = set()
+    for doc in documents:
+        parent = doc.metadata[key]
+        if parent not in seen:
+            seen.add(parent)
+            yield parent
+
+
+async def stream_top(query, sources, catalog, rank_points, k, *, parent_id_key=None):
     """Yield one snapshot per accepted, complete source revision for this query."""
+    if parent_id_key is not None:
+        rank_points = tuple(rank_points)
     fusion = CatalogFusion(sources=sources, documents=catalog, rank_points=rank_points, k=k)
     async for chunk in RunnableParallel(sources).astream(query):
         for source, event in chunk.items():
-            ids = (doc.id for doc in event.documents)
+            if parent_id_key is None:
+                ids = (doc.id for doc in event.documents)
+            else:
+                ids = islice(_parent_ids(event.documents, parent_id_key), len(rank_points))
             if fusion.replace(source, event.version, ids):
                 yield source, event.version, fusion.top()
 
