@@ -34,3 +34,43 @@ async for source, version, hits in stream_top(query, sources, catalog, [3, 2, 1]
 Set a stable `Document.id` on each result and keep a catalog mapping those IDs to the original documents. Each list contains distinct IDs and fits the rank-point table. A source can emit multiple complete lists with increasing versions, as `title_updates` does. Send an empty list to withdraw it. A late or repeated version leaves the current ranking in place. The coordinator returns canonical documents with their original text and metadata, even when a retriever works on a different representation.
 
 The example uses [LangChain RunnableParallel](https://reference.langchain.com/python/langchain-core/runnables/base/RunnableParallel) to stream branch outputs and the [packaged RankPatch catalog adapter](../../python/rankpatch/catalog.py) to apply revisions. The output sums integer rank points and breaks ties by ascending catalog ID.
+
+## Fuse parent documents from chunk search
+
+A vector retriever can return several chunks from the same parent. This example gives each source one vote per parent at its first appearance, then applies integer rank points to the compacted list. A LangChain user described this scoring problem in [langchain-ai/langchain#37046](https://github.com/langchain-ai/langchain/issues/37046).
+
+Save the following beside `stream_search.py` and run it with Python. The local runnable replays three chunk hits. In an application, substitute your vector store's retriever for `vector_retriever` and use the metadata field that identifies the parent.
+
+```python
+import asyncio
+
+from langchain_core.documents import Document
+from langchain_core.runnables import RunnableLambda
+from stream_search import Revision, stream_top
+
+parents = {
+    "cache": Document(id="cache", page_content="Cache manual"),
+    "routing": Document(id="routing", page_content="Routing manual"),
+}
+chunks = [
+    Document(page_content=text, metadata={"parent_id": parent})
+    for text, parent in [("cache keys", "cache"), ("cache hits", "cache"), ("routes", "routing")]
+]
+points = [3, 1]
+
+def parent_revision(results):
+    ordered_ids = dict.fromkeys(chunk.metadata["parent_id"] for chunk in results)
+    return Revision(0, [parents[key] for key in list(ordered_ids)[:len(points)]])
+
+async def main():
+    vector_retriever = RunnableLambda(lambda query: chunks)
+    sources = {"vector": vector_retriever | RunnableLambda(parent_revision)}
+    async for _, _, hits in stream_top("cache", sources, parents, points, k=2):
+        rows = [(hit.document.page_content, hit.score) for hit in hits]
+        assert rows == [("Cache manual", 3), ("Routing manual", 1)]
+        print(rows)
+
+asyncio.run(main())
+```
+
+Each chunk needs a known parent ID. Apply the conversion to each retriever independently so another source can still contribute to the same parent. For revised results, pass the source's increasing revision number in place of the single-response `0`.
